@@ -50,21 +50,36 @@ npm test
 ```bash
 npm run inspector -- review --repo ./path/to/repo --format markdown
 npm run inspector -- review --repo ./path/to/repo --validate "npm test"
+npm run inspector -- review --repo ./path/to/repo --format json --out report.json
 ```
 
-The report is written to `review-report.md`.
+Flags:
+
+- `--repo <path>` (required) — repository to inspect; paths with spaces work.
+- `--base-ref <ref>` — base to diff against; defaults to `main`, then `master`.
+- `--format markdown|json` — output format (default `markdown`).
+- `--out <file>` — report location (default `review-report.md`).
+- `--validate <command>` — repeatable; commands run inside the repository
+  with a 120s timeout and a 64k output cap. Failures are reported, not fatal.
+
+Exit codes: `0` success, `1` at least one validation failed (CI-friendly),
+`2` usage error.
 
 ## MCP
 
 Start the stdio server with:
 
 ```bash
-npm run mcp-server
+npm run mcp-server                            # inspection only
+INSPECTOR_ALLOW_VALIDATIONS=1 npm run mcp-server  # also allow validation commands
 ```
 
-It exposes a `review_repository` tool. Inspect the implementation to determine
-its current input contract and whether it is suitable for the production model
-you propose.
+It exposes a `review_repository` tool taking `repo_path` (required),
+`base_ref`, and `validation_commands`. Repository inspection is read-only.
+`validation_commands` execute shell commands with the server's privileges,
+so they are refused unless the operator started the server with
+`INSPECTOR_ALLOW_VALIDATIONS=1`. Failures inside a review (bad path, unknown
+ref, failing command) come back as tool results, never protocol crashes.
 
 ## Project layout
 
