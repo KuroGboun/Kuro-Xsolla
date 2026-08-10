@@ -184,6 +184,20 @@ and the error path). Every change was verified by an executed command, not by
 reading the diff alone. A running work log was kept outside the repo and used
 to fill in this document.
 
+I leaned on Claude Code's plan mode deliberately: each work round (the fix
+round, the feature round) started in read-only planning, where the agent
+explored the code and wrote up findings and a step-by-step plan before it was
+allowed to edit anything. That kept the context focused — decisions were made
+against an explicit written plan I could veto, instead of accumulating
+mid-edit — and the approved plans doubled as the structure for this document.
+
+For the visual interface I used Claude's design tool (claude.ai/design): the
+HTML report's layout was iterated as a design mock first — twice — and each
+approved mock was then imported into the coding session over MCP and
+implemented in the renderer. Designing in a dedicated surface and implementing
+from the imported artifact kept design churn out of the codebase; only
+reviewed layouts ever became code.
+
 ## Where did you check, correct, or reject an AI suggestion? (required)
 
 - **Caught a real bug in AI-written error handling:** the first version of the
