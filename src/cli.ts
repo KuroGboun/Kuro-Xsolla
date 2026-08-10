@@ -7,22 +7,30 @@ export type Args = {
   command: string;
   repositoryPath?: string;
   baseRef?: string;
-  format: "markdown" | "json";
-  outputPath: string;
+  format: "markdown" | "json" | "html";
+  /** undefined = default for the chosen format; "-" = stdout. */
+  outputPath?: string;
+  includePatches: boolean;
   validations: string[];
 };
+
+export function defaultOutputPath(format: Args["format"]): string {
+  if (format === "html") return "review-report.html";
+  if (format === "json") return "review-report.json";
+  return "review-report.md";
+}
 
 export function parseArgs(argv: string[]): Args {
   const args: Args = {
     command: argv[0] ?? "",
     format: "markdown",
-    outputPath: "review-report.md",
+    includePatches: false,
     validations: [],
   };
 
   const valueFor = (flag: string, index: number): string => {
     const value = argv[index];
-    if (value === undefined || value.startsWith("--")) {
+    if (value === undefined || (value.startsWith("--") && value !== "-")) {
       throw new Error(`missing value for ${flag}`);
     }
     return value;
@@ -36,12 +44,14 @@ export function parseArgs(argv: string[]): Args {
       args.baseRef = valueFor(token, ++index);
     } else if (token === "--format") {
       const format = valueFor(token, ++index);
-      if (format !== "markdown" && format !== "json") {
-        throw new Error(`unsupported format "${format}" (expected markdown or json)`);
+      if (format !== "markdown" && format !== "json" && format !== "html") {
+        throw new Error(`unsupported format "${format}" (expected markdown, json, or html)`);
       }
       args.format = format;
     } else if (token === "--out") {
       args.outputPath = valueFor(token, ++index);
+    } else if (token === "--patches") {
+      args.includePatches = true;
     } else if (token === "--validate") {
       args.validations.push(valueFor(token, ++index));
     } else {
@@ -53,7 +63,8 @@ export function parseArgs(argv: string[]): Args {
 
 const USAGE =
   "Usage: inspector review --repo <path> [--base-ref <ref>] " +
-  "[--format markdown|json] [--out <file>] [--validate <command>]...";
+  "[--format markdown|json|html] [--out <file>|-] [--patches] " +
+  "[--validate <command>]...";
 
 async function main() {
   let args: Args;
@@ -76,10 +87,18 @@ async function main() {
     repositoryPath: args.repositoryPath,
     baseRef: args.baseRef,
     validationCommands: args.validations,
+    includePatches: args.includePatches,
   });
   const report = renderReport(result, args.format);
-  writeFileSync(args.outputPath, report, "utf8");
-  console.log(`Review report written to ${args.outputPath}`);
+
+  const outputPath = args.outputPath ?? defaultOutputPath(args.format);
+  if (outputPath === "-") {
+    // Report on stdout, status on stderr, so the output pipes cleanly.
+    process.stdout.write(report + "\n");
+  } else {
+    writeFileSync(outputPath, report, "utf8");
+    console.error(`Review report written to ${outputPath}`);
+  }
 
   const failed = result.validationResults.filter((entry) => entry.status === "failed");
   if (failed.length > 0) {
