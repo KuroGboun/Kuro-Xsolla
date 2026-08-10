@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { changedFiles, resolveBaseRef } from "./git.js";
 import { markdownReport } from "./report.js";
 import { htmlReport } from "./html-report.js";
@@ -7,16 +8,18 @@ import { runValidations } from "./validation.js";
 
 /** Runs the review and returns structured data. */
 export async function collectReview(request: ReviewRequest): Promise<ReviewResult> {
-  const baseRef = resolveBaseRef(request.repositoryPath, request.baseRef);
-  const files = changedFiles(request.repositoryPath, baseRef, {
+  // Resolve up front so reports and errors show a real path, not "." or "..".
+  const repositoryPath = resolve(request.repositoryPath);
+  const baseRef = resolveBaseRef(repositoryPath, request.baseRef);
+  const files = changedFiles(repositoryPath, baseRef, {
     includePatches: request.includePatches,
   });
   const validations = await runValidations(
     request.validationCommands ?? [],
-    request.repositoryPath,
+    repositoryPath,
   );
   return {
-    repositoryPath: request.repositoryPath,
+    repositoryPath,
     baseRef,
     summary: summarize(files, validations),
     changedFiles: files,
