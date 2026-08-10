@@ -31,7 +31,7 @@ beforeAll(() => {
   writeFileSync(join(repo, "new.txt"), "new\n");
   git(["add", "."]);
   git(["commit", "-m", "changes"]);
-  writeFileSync(join(repo, "untracked.txt"), "loose\n");
+  writeFileSync(join(repo, "untracked.txt"), "loose\nlines\n");
 });
 
 afterAll(() => {
@@ -48,32 +48,70 @@ describe("git inspection", () => {
     expect(() => resolveBaseRef(tmpdir())).toThrow(/git rev-parse failed/);
   });
 
-  it("classifies modified, renamed, and untracked files", () => {
+  it("classifies files and reports line stats", () => {
     const files = changedFiles(repo, "master");
-    expect(files).toContainEqual({ path: "a.txt", status: "modified" });
-    expect(files).toContainEqual({ path: "c.txt", status: "renamed", oldPath: "b.txt" });
-    expect(files).toContainEqual({ path: "new.txt", status: "added" });
-    expect(files).toContainEqual({ path: "untracked.txt", status: "untracked" });
+    expect(files).toContainEqual({
+      path: "a.txt",
+      status: "modified",
+      additions: 1,
+      deletions: 1,
+    });
+    expect(files).toContainEqual({
+      path: "c.txt",
+      status: "renamed",
+      oldPath: "b.txt",
+      additions: 0,
+      deletions: 0,
+    });
+    expect(files).toContainEqual({
+      path: "new.txt",
+      status: "added",
+      additions: 1,
+      deletions: 0,
+    });
+    expect(files).toContainEqual({
+      path: "untracked.txt",
+      status: "untracked",
+      additions: 2,
+      deletions: 0,
+    });
+  });
+
+  it("attaches capped patches when requested", () => {
+    const files = changedFiles(repo, "master", { includePatches: true, patchCharLimit: 40 });
+    const modified = files.find((file) => file.path === "a.txt");
+    expect(modified?.patch).toBeTruthy();
+    expect(modified?.patch?.length).toBeLessThanOrEqual(40);
+    expect(modified?.patchTruncated).toBe(true);
   });
 });
 
 describe("reviewRepository end to end", () => {
-  it("produces a markdown report with failed validations without throwing", async () => {
+  it("produces a markdown report with summary, stats, and failed validations", async () => {
     const report = await reviewRepository({
       repositoryPath: repo,
       validationCommands: ["echo checked", "exit 2"],
     });
     expect(report).toContain("Base ref: master");
-    expect(report).toContain("a.txt (modified)");
+    expect(report).toContain("## Summary");
+    expect(report).toContain("Validations: 1 passed, 1 failed");
+    expect(report).toContain("a.txt (modified, +1/-1)");
     expect(report).toContain("echo checked — passed (exit 0)");
     expect(report).toContain("exit 2 — failed (exit 2)");
   });
 
-  it("produces machine-readable JSON when requested", async () => {
+  it("produces machine-readable JSON with a summary block", async () => {
     const report = await reviewRepository({ repositoryPath: repo, format: "json" });
     const parsed = JSON.parse(report);
     expect(parsed.baseRef).toBe("master");
-    expect(parsed.changedFiles.length).toBeGreaterThan(0);
+    expect(parsed.summary.totalFiles).toBeGreaterThan(0);
+    expect(parsed.summary.byStatus.renamed).toBe(1);
+  });
+
+  it("produces an html report", async () => {
+    const report = await reviewRepository({ repositoryPath: repo, format: "html" });
+    expect(report).toContain("<!doctype html>");
+    expect(report).toContain("a.txt");
   });
 
   it("exposes structured results for adapters", async () => {
