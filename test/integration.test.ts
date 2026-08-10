@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { basename, join, resolve } from "node:path";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { collectReview, reviewRepository } from "../src/core.js";
 import { changedFiles, resolveBaseRef } from "../src/git.js";
 
@@ -46,6 +46,22 @@ describe("git inspection", () => {
   it("rejects unknown base refs and non-repos", () => {
     expect(() => resolveBaseRef(repo, "does-not-exist")).toThrow(/does not exist/);
     expect(() => resolveBaseRef(tmpdir())).toThrow(/git rev-parse failed/);
+  });
+
+  it("falls back beyond main/master to develop, trunk, and dev", () => {
+    for (const branch of ["develop", "trunk", "dev"]) {
+      const solo = mkdtempSync(join(tmpdir(), `inspector-${branch}-`));
+      execFileSync("git", ["init", "-b", branch], { cwd: solo, stdio: "pipe" });
+      execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: solo, stdio: "pipe" });
+      execFileSync("git", ["config", "user.name", "Test"], { cwd: solo, stdio: "pipe" });
+      execFileSync("git", ["config", "commit.gpgsign", "false"], { cwd: solo, stdio: "pipe" });
+      writeFileSync(join(solo, "a.txt"), "one\n");
+      execFileSync("git", ["add", "."], { cwd: solo, stdio: "pipe" });
+      execFileSync("git", ["commit", "-m", "base"], { cwd: solo, stdio: "pipe" });
+
+      expect(resolveBaseRef(solo)).toBe(branch);
+      rmSync(solo, { recursive: true, force: true });
+    }
   });
 
   it("classifies files and reports line stats", () => {
@@ -118,5 +134,32 @@ describe("reviewRepository end to end", () => {
     const result = await collectReview({ repositoryPath: repo });
     expect(result.validationResults).toEqual([]);
     expect(result.changedFiles.some((file) => file.status === "renamed")).toBe(true);
+  });
+});
+
+describe("relative repository paths", () => {
+  const originalCwd = process.cwd();
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+  });
+
+  it("resolves '.' to an absolute path instead of reporting it literally", async () => {
+    process.chdir(repo);
+    const result = await collectReview({ repositoryPath: "." });
+    expect(result.repositoryPath).toBe(resolve("."));
+    expect(result.repositoryPath).not.toBe(".");
+    expect(basename(result.repositoryPath)).toBe(basename(repo));
+  });
+
+  it("carries the resolved path into every report format", async () => {
+    process.chdir(repo);
+    const markdown = await reviewRepository({ repositoryPath: "." });
+    expect(markdown).not.toContain("Review Report: .\n");
+    expect(markdown).toContain(`Review Report: ${resolve(".")}`);
+
+    const html = await reviewRepository({ repositoryPath: ".", format: "html" });
+    expect(html).toContain(`<title>Review report · ${basename(repo)}</title>`);
+    expect(html).not.toContain(">.<");
   });
 });

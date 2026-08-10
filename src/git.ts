@@ -40,9 +40,13 @@ function refExists(repositoryPath: string, ref: string): boolean {
   }
 }
 
+/** Branch names tried, in order, when no base ref is given explicitly. */
+const DEFAULT_BASE_REF_CANDIDATES = ["main", "master", "develop", "trunk", "dev"];
+
 /**
  * Validates the repository and returns the base ref to diff against.
- * Falls back from main to master when no explicit ref is given.
+ * Falls back through common default-branch names when no explicit ref is
+ * given; anything outside this list still works via --base-ref.
  */
 export function resolveBaseRef(repositoryPath: string, baseRef?: string): string {
   git(repositoryPath, ["rev-parse", "--is-inside-work-tree"]);
@@ -53,13 +57,14 @@ export function resolveBaseRef(repositoryPath: string, baseRef?: string): string
     }
     return baseRef;
   }
-  for (const candidate of ["main", "master"]) {
+  for (const candidate of DEFAULT_BASE_REF_CANDIDATES) {
     if (refExists(repositoryPath, candidate)) {
       return candidate;
     }
   }
   throw new GitError(
-    `could not find a default base ref (main or master) in ${repositoryPath}; pass one explicitly`,
+    `could not find a default base ref (tried ${DEFAULT_BASE_REF_CANDIDATES.join(", ")}) ` +
+      `in ${repositoryPath}; pass one explicitly`,
   );
 }
 

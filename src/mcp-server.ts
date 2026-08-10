@@ -23,7 +23,10 @@ server.tool(
     base_ref: z
       .string()
       .optional()
-      .describe("Base ref to diff against. Defaults to main, then master."),
+      .describe(
+        "Base ref to diff against. Defaults to the first existing branch " +
+          "among main, master, develop, trunk, dev.",
+      ),
     validation_commands: z
       .array(z.string())
       .optional()

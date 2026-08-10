@@ -56,7 +56,8 @@ npm run inspector -- review --repo ./path/to/repo --format json --out report.jso
 Flags:
 
 - `--repo <path>` (required) — repository to inspect; paths with spaces work.
-- `--base-ref <ref>` — base to diff against; defaults to `main`, then `master`.
+- `--base-ref <ref>` — base to diff against; defaults to the first existing
+  branch among `main`, `master`, `develop`, `trunk`, `dev`.
 - `--format markdown|json|html` — output format (default `markdown`). The
   markdown report includes a summary with review flags and a mermaid chart of
   changed lines per directory; the HTML report is a single self-contained
