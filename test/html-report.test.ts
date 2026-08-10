@@ -26,9 +26,9 @@ describe("htmlReport", () => {
     );
     expect(html).toContain("<!doctype html>");
     expect(html).toContain("src/a.ts");
-    expect(html).toContain("files changed");
-    expect(html).toContain("failed (exit 1)");
-    // Self-contained: no external requests.
+    expect(html).toContain("Files changed");
+    expect(html).toContain("failed · exit 1");
+    // Self-contained: no external requests (embedded data: URIs are fine).
     expect(html).not.toMatch(/src="http|href="http|@import|url\(/);
   });
 
