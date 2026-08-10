@@ -108,6 +108,16 @@ decision names — AI agents and humans/CI:
    security property I was not willing to trade for typography; and the
    design tool's runtime scripts were left out — the shipped page is
    static, dependency-free HTML (~200 KB self-contained).
+
+   A second design iteration (again mocked in the design tool, then
+   implemented) evolved the page into a landing-style report: dark ink hero
+   with the brand bar, a 76px Satoshi Bold headline with its closing line in
+   cyan, a data-driven lede sentence with real counts, anchor CTAs, and the
+   metric strip floating as a white card over the hero. This deliberately
+   promotes cyan beyond the identity's ~2% coverage rule — a conscious
+   register shift for a presentation artifact, not an oversight. Typeface is
+   Satoshi everywhere except inside diff/output code blocks, where
+   fixed-width alignment is functional.
 7. **Mermaid directory chart** — the markdown report includes a pie of
    changed lines per top-level directory; GitHub renders it natively, so the
    report file is self-visualizing when committed or attached.
@@ -270,10 +280,12 @@ content). The new next three:
 
 - Session 1 (2026-08-09, ~17:40–18:40): investigation, planning, all
   correctness fixes, tests, docs — roughly 60 focused minutes.
-- Session 2 (2026-08-10, ~75 focused minutes): the eight-feature round and
-  this document's updates.
-- Total is over the suggested 90 minutes. The overage was a deliberate
-  choice to extend scope with the feature round after the correctness work
-  was complete, not slow progress on the core task; the fix round alone fit
-  the window. Stated plainly here because accurate reporting seemed more
-  valuable than nominal compliance.
+- Session 2 (2026-08-10, spread across the day, roughly 3 focused hours):
+  the eight-feature round, two design iterations of the HTML report
+  (including debugging a corrupted embedded asset), and this document's
+  updates.
+- Total is well over the suggested 90 minutes. The overage was a deliberate
+  choice to extend scope after the correctness work was complete, not slow
+  progress on the core task; the fix round alone fit the window. Stated
+  plainly here because accurate reporting seemed more valuable than nominal
+  compliance.
