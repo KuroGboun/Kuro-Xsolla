@@ -72,7 +72,7 @@ const STYLE = `
     .metric:nth-child(n+3) { border-top: 1px solid var(--hairline); }
   }
 
-  section { margin-top: 56px; }
+  section { margin-top: 96px; }
   h2 { margin: 0 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -0.025em; }
   .sub { margin: 0 0 12px; font-size: 13px; color: var(--slate); }
 
