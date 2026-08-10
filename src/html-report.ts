@@ -26,7 +26,7 @@ const STYLE = `
          -webkit-font-smoothing: antialiased; }
   .display { font-family: Satoshi, Inter, -apple-system, sans-serif;
              font-weight: 500; }
-  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .mono { font-family: Satoshi, Inter, -apple-system, sans-serif; }
   .wrap { max-width: 1040px; margin: 0 auto; padding: 0 40px; }
   @media (max-width: 640px) { .wrap { padding: 0 20px; } }
 
@@ -110,7 +110,7 @@ const STYLE = `
   .card .head { display: flex; justify-content: space-between; gap: 16px;
                 align-items: baseline; }
   .card h3 { margin: 0; font-size: 13px; font-weight: 400; word-break: break-all;
-             font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+             font-family: Satoshi, Inter, -apple-system, sans-serif; }
   .card .verdict { font-size: 13px; color: var(--slate); white-space: nowrap; }
   .card .verdict.fail { color: var(--del); }
   .card details { margin-top: 10px; }
