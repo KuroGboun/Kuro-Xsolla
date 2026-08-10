@@ -10,56 +10,84 @@ function escapeHtml(text: string): string {
     .replaceAll("'", "&#39;");
 }
 
+/*
+ * Visual language: quiet canvas, hairline separation, one cyan accent.
+ * Fonts stay a local stack (Inter when installed) so the page keeps its
+ * zero-external-requests guarantee. Diff green/red is retained, muted,
+ * because +/- and pass/fail are functional data colors in a review tool.
+ */
 const STYLE = `
   :root {
-    --bg: #ffffff; --fg: #1a1a2e; --muted: #6b7280; --card: #f4f5f7;
-    --border: #e5e7eb; --add: #16a34a; --del: #dc2626;
-    --pass-bg: #ecfdf5; --pass-border: #a7f3d0;
-    --fail-bg: #fef2f2; --fail-border: #fecaca;
+    --paper: #FFFFFF; --ink: #0F1012; --slate: #7A7F87;
+    --hairline: #E7E9EC; --fog: #F6F7F8; --cyan: #00C2E8;
+    --add: #35875C; --del: #B5473E;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #111318; --fg: #e5e7eb; --muted: #9ca3af; --card: #1b1e26;
-      --border: #2a2e39; --add: #34d399; --del: #f87171;
-      --pass-bg: #0c2419; --pass-border: #14532d;
-      --fail-bg: #2a1214; --fail-border: #7f1d1d;
+      --paper: #0F1012; --ink: #F2F3F5; --slate: #9AA0A8;
+      --hairline: rgba(255,255,255,0.12); --fog: rgba(255,255,255,0.04);
+      --add: #4CAF7D; --del: #E07B72;
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 2rem 1rem; background: var(--bg); color: var(--fg);
-         font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 60rem; margin: 0 auto; }
-  h1 { font-size: 1.4rem; word-break: break-all; }
-  h2 { font-size: 1.1rem; margin-top: 2rem; }
-  .meta { color: var(--muted); }
-  .tiles { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
-  .tile { background: var(--card); border: 1px solid var(--border); border-radius: .5rem;
-          padding: .6rem 1rem; min-width: 7rem; }
-  .tile b { display: block; font-size: 1.3rem; }
-  .tile span { color: var(--muted); font-size: .8rem; }
-  .flags li { color: var(--muted); }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 400 14px/1.6 Inter, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 60rem; margin: 0 auto; padding: 48px 24px 64px; }
+  .eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .08em;
+             text-transform: uppercase; color: var(--slate); margin: 0 0 12px; }
+  h1 { font-size: 40px; font-weight: 500; letter-spacing: -0.035em;
+       line-height: 1.1; margin: 0; word-break: break-word; }
+  .accent { width: 40px; height: 3px; background: var(--cyan);
+            border: none; margin: 20px 0 16px; }
+  .meta { color: var(--slate); font-size: 13px; margin: 0;
+          font-family: ui-monospace, "SF Mono", Menlo, monospace;
+          word-break: break-all; }
+  h2 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em;
+       margin: 40px 0 8px; }
+  .tiles { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .tile { background: var(--fog); border-radius: 12px; padding: 16px 20px;
+          min-width: 8.5rem; }
+  .tile b { display: block; font-size: 28px; font-weight: 500;
+            letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--slate); font-size: 12px; }
+  .flags { margin: 16px 0 0; padding: 0; list-style: none; }
+  .flags li { color: var(--slate); font-size: 13px; padding: 8px 0;
+              border-top: 1px solid var(--hairline); }
+  .flags li:last-child { border-bottom: 1px solid var(--hairline); }
   table { border-collapse: collapse; width: 100%; }
-  td, th { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--border);
-           vertical-align: top; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .path { word-break: break-all; font-family: ui-monospace, Menlo, monospace; font-size: .85rem; }
-  .status { color: var(--muted); font-size: .8rem; white-space: nowrap; }
-  .bar { display: flex; height: .5rem; border-radius: .25rem; overflow: hidden;
-         background: var(--card); min-width: 6rem; }
+  td, th { text-align: left; padding: 10px 12px 10px 0;
+           border-bottom: 1px solid var(--hairline); vertical-align: middle; }
+  th { font-size: 11px; font-weight: 500; letter-spacing: .08em;
+       text-transform: uppercase; color: var(--slate); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums;
+           white-space: nowrap; font-size: 13px; }
+  .path { word-break: break-all; font-size: 13px;
+          font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .status { color: var(--slate); font-size: 12px; white-space: nowrap; }
+  .bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden;
+         background: var(--fog); min-width: 6rem; }
   .bar .add { background: var(--add); }
   .bar .del { background: var(--del); }
   .add-count { color: var(--add); } .del-count { color: var(--del); }
-  .card { border: 1px solid var(--border); border-radius: .5rem; margin: .75rem 0;
-          padding: .75rem 1rem; }
-  .card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
-  .card.fail { background: var(--fail-bg); border-color: var(--fail-border); }
-  .card h3 { margin: 0; font-size: .95rem; font-family: ui-monospace, Menlo, monospace;
+  .card { border: 1px solid var(--hairline); border-radius: 12px;
+          margin: 12px 0; padding: 14px 18px; }
+  .card-head { display: flex; justify-content: space-between; gap: 16px;
+               align-items: baseline; }
+  .card h3 { margin: 0; font-size: 13px; font-weight: 400;
+             font-family: ui-monospace, "SF Mono", Menlo, monospace;
              word-break: break-all; }
-  .card .verdict { font-weight: 600; }
-  pre { background: var(--card); border: 1px solid var(--border); border-radius: .4rem;
-        padding: .75rem; overflow-x: auto; font-size: .8rem; }
-  details { margin-top: .5rem; }
-  summary { cursor: pointer; color: var(--muted); }
+  .verdict { font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .verdict.pass { color: var(--slate); }
+  .verdict.fail { color: var(--del); }
+  pre { background: var(--fog); border-radius: 8px; padding: 12px 14px;
+        overflow-x: auto; font-size: 12.5px; line-height: 1.5;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  details { border-top: 1px solid var(--hairline); padding: 8px 0; }
+  details:last-of-type { border-bottom: 1px solid var(--hairline); }
+  .card details, .card details:last-of-type { border: none; padding: 6px 0 0; }
+  summary { cursor: pointer; color: var(--slate); font-size: 13px; }
+  .empty { color: var(--slate); font-size: 13px; }
 `;
 
 function fileRow(file: ChangedFile, maxLines: number): string {
@@ -75,7 +103,8 @@ function fileRow(file: ChangedFile, maxLines: number): string {
       ? ""
       : `<div class="bar"><div class="add" style="width:${addPct}%"></div><div class="del" style="width:${delPct}%"></div></div>`;
   return `<tr>
-    <td><span class="path">${escapeHtml(file.path)}${rename}</span><br><span class="status">${file.status}</span></td>
+    <td><span class="path">${escapeHtml(file.path)}${rename}</span></td>
+    <td class="status">${file.status}</td>
     <td class="num">${stats}</td>
     <td>${bar}</td>
   </tr>`;
@@ -84,6 +113,7 @@ function fileRow(file: ChangedFile, maxLines: number): string {
 export function htmlReport(result: ReviewResult): string {
   const { summary } = result;
   const maxLines = Math.max(0, ...result.changedFiles.map((file) => file.additions + file.deletions));
+  const repoName = result.repositoryPath.replace(/\/+$/, "").split("/").pop() || result.repositoryPath;
 
   const tiles = [
     [summary.totalFiles, "files changed"],
@@ -102,14 +132,17 @@ export function htmlReport(result: ReviewResult): string {
 
   const files =
     result.changedFiles.length === 0
-      ? "<p class=\"meta\">No changed files.</p>"
-      : `<table>${result.changedFiles.map((file) => fileRow(file, maxLines)).join("")}</table>`;
+      ? '<p class="empty">No changed files.</p>'
+      : `<table>
+          <tr><th>File</th><th>Status</th><th></th><th></th></tr>
+          ${result.changedFiles.map((file) => fileRow(file, maxLines)).join("")}
+        </table>`;
 
   const diffs = result.changedFiles
     .filter((file) => file.patch)
     .map(
       (file) => `<details>
-        <summary>${escapeHtml(file.path)}${file.patchTruncated ? " (truncated)" : ""}</summary>
+        <summary><span class="path">${escapeHtml(file.path)}</span>${file.patchTruncated ? " (truncated)" : ""}</summary>
         <pre>${escapeHtml(file.patch ?? "")}</pre>
       </details>`,
     )
@@ -117,13 +150,16 @@ export function htmlReport(result: ReviewResult): string {
 
   const validations =
     result.validationResults.length === 0
-      ? "<p class=\"meta\">No validation commands were run.</p>"
+      ? '<p class="empty">No validation commands were run.</p>'
       : result.validationResults
           .map((entry) => {
             const exitCode = entry.exitCode === null ? "killed" : `exit ${entry.exitCode}`;
-            return `<div class="card ${entry.status === "passed" ? "pass" : "fail"}">
-              <h3>${escapeHtml(entry.command)}</h3>
-              <p class="verdict">${entry.status} (${exitCode})${entry.truncated ? " — output truncated" : ""}</p>
+            const verdictClass = entry.status === "passed" ? "pass" : "fail";
+            return `<div class="card">
+              <div class="card-head">
+                <h3>${escapeHtml(entry.command)}</h3>
+                <span class="verdict ${verdictClass}">${entry.status} (${exitCode})${entry.truncated ? " — output truncated" : ""}</span>
+              </div>
               <details><summary>output</summary><pre>${escapeHtml(entry.output)}</pre></details>
             </div>`;
           })
@@ -134,13 +170,15 @@ export function htmlReport(result: ReviewResult): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Report</title>
+<title>Review report · ${escapeHtml(repoName)}</title>
 <style>${STYLE}</style>
 </head>
 <body>
 <main>
-  <h1>Review Report: ${escapeHtml(result.repositoryPath)}</h1>
-  <p class="meta">Base ref: ${escapeHtml(result.baseRef)}</p>
+  <p class="eyebrow">Review report</p>
+  <h1>${escapeHtml(repoName)}</h1>
+  <hr class="accent">
+  <p class="meta">${escapeHtml(result.repositoryPath)} · base ${escapeHtml(result.baseRef)}</p>
   <div class="tiles">${tiles}</div>
   ${flags}
   <h2>Changed files</h2>

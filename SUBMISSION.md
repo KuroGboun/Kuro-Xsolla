@@ -87,6 +87,21 @@ decision names — AI agents and humans/CI:
    collapsible diffs. Every untrusted string is HTML-escaped, tested with
    script-injection fixtures. HTML is deliberately *not* offered over MCP —
    agents want text and structure, not markup for humans.
+
+   The page is styled to a **design identity I reverse-engineered from
+   xsolla.com's homepage**: I sampled the palette (paper canvas, near-black
+   ink, slate secondary text, hairline dividers, fog fills, one cyan accent),
+   type rules (medium-weight display at tight negative tracking, small grey
+   body), and component patterns (metric cards on fog fills, flat
+   hairline-bordered cards, hairline-divided rows instead of box grids) into
+   a short identity document, then applied its "internal tool" register —
+   tighter spacing, more tables, less display type. Two deliberate
+   deviations, because function beats brand: muted green/red stays for
+   +/- and pass/fail (they are data colors a review tool cannot drop, kept
+   quiet so cyan remains the only decorative accent), and the typeface is a
+   local font stack (Inter when installed) rather than a webfont, because
+   the page's zero-external-requests guarantee is a security property I was
+   not willing to trade for typography.
 7. **Mermaid directory chart** — the markdown report includes a pie of
    changed lines per top-level directory; GitHub renders it natively, so the
    report file is self-visualizing when committed or attached.
