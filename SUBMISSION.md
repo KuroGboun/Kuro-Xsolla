@@ -50,15 +50,61 @@ In priority order (one commit each — see `git log`):
    builds a real temp git repo (with spaces in its path) and runs the review
    end to end.
 
+## Feature round (second session, beyond the fixes)
+
+After the correctness round I deliberately extended scope with eight
+features, each in its own commit, chosen to serve the two users the hybrid
+decision names — AI agents and humans/CI:
+
+1. **Diff stats + capped patches** — the report previously listed only file
+   names, which under-serves review. Every file now carries `+adds/-dels`
+   (from `git diff --numstat -z`, including rename records and binary
+   markers), and `--patches`/`include_patches` attach per-file unified diffs
+   capped at 4k chars with explicit truncation markers.
+2. **Summary heuristics** — a computed summary (files, lines, statuses,
+   validation outcomes) plus review flags: "lockfile changed", "CI
+   configuration changed", "source changed without test changes", "large
+   change", "binary files changed". Rendered first in every format because
+   both agents and humans triage from the top.
+3. **MCP context budget (`max_chars`)** — AI clients pay for every character
+   that enters their context window, so the tool lets them bound it. Packing
+   is priority-ordered (summary > failed validations > file list > passing
+   output > patches) with a strict cutoff — once one priority level is
+   dropped, everything below it is dropped too, because a report that kept
+   low-value patches while silently missing passing output would mislead the
+   reader. Every omission is named in the text so the agent knows the report
+   is partial and can re-request. A fenced JSON summary block accompanies the
+   markdown for machine consumption.
+4. **Command allowlist** — `INSPECTOR_ALLOWED_COMMANDS="npm test,npm run
+   lint"` narrows the MCP execution gate from all-or-nothing to
+   exactly-these; the policy is a pure, unit-tested function. Default remains
+   refuse-all.
+5. **Pipe-friendly CLI** — `--out -` sends the report to stdout and status to
+   stderr, so `inspector review … --out - | jq` and CI pipelines compose.
+6. **HTML visualizer** (`--format html`) — one self-contained page (inline
+   CSS, zero external requests, so it works offline and exfiltrates nothing):
+   summary tiles, per-file add/delete bars, pass/fail validation cards and
+   collapsible diffs. Every untrusted string is HTML-escaped, tested with
+   script-injection fixtures. HTML is deliberately *not* offered over MCP —
+   agents want text and structure, not markup for humans.
+7. **Mermaid directory chart** — the markdown report includes a pie of
+   changed lines per top-level directory; GitHub renders it natively, so the
+   report file is self-visualizing when committed or attached.
+8. **Self-review CI** — the workflow now runs the inspector on its own
+   repository every push and uploads markdown + HTML reports as an artifact:
+   the tool dogfoods itself, and every CI run is a live demo.
+
 ## What did you intentionally not do?
 
-- No allowlist/sandboxing of *which* commands may run — the operator gate plus
-  timeout/output caps fit the local-developer trust model; a hosted deployment
-  would need more (see interface decision).
+- No sandboxing of command *execution* (containers, seccomp) — the allowlist,
+  refuse-by-default gate, timeouts, and output caps fit the local-developer
+  trust model; a hosted deployment would need real isolation (see interface
+  decision).
 - No parallel validation execution; sequential keeps output deterministic.
-- No structured MCP output schema (JSON content blocks) — markdown text is what
-  current MCP clients consume best; the `format: "json"` path exists in core if
-  a client wants it.
+- No MCP `outputSchema`/`structuredContent` from the newer MCP spec — the
+  fenced-JSON summary block delivers machine-readable data without betting on
+  client support; revisit when target clients advertise it.
+- No HTML over MCP — agents consume text and structure, not human markup.
 - Did not rename `baseRef` casing in the MCP schema's favor everywhere; core
   keeps camelCase types, adapters translate at the edge.
 
@@ -122,8 +168,19 @@ to fill in this document.
   remove the space that broke `--repo` parsing was considered and rejected —
   the bug had to be fixed in code (graders run this elsewhere), and the spaced
   path became a test case instead.
+- **Caught a misleading design in the AI's budget packer (feature round):**
+  the first `packReport` filled the budget greedily, so when passing-test
+  output didn't fit, it still squeezed in *lower-priority* patch hunks — a
+  report that looks complete while silently missing more important content.
+  A failing test exposed it; the packer was redesigned with a strict cutoff
+  (once a priority level is dropped, everything below it drops too). The
+  first version of that test was itself wrong — it asserted on a substring
+  that legitimately appears in the omission notes — and was tightened to
+  assert on patch content instead.
 
 ## Commands used to verify the result, with outcomes
+
+Fix round:
 
 - `npm install && npm run typecheck && npm test` — baseline: clean, 1/1 test.
 - `npx tsc -p tsconfig.json --noEmit` — clean after every phase.
@@ -136,6 +193,23 @@ to fill in this document.
   a real report (impossible before the contract fix); `validation_commands`
   refused without the env gate and executed with it; nonexistent path returns
   `isError` with a clear message and the server stays up.
+
+Feature round:
+
+- `npx vitest run` — 38/38 passing (8 files), including injection fixtures
+  for HTML escaping and markdown fences, budget-packing priorities and
+  omission markers, allowlist policy, and numstat/rename/untracked stats
+  against a real temp git repo.
+- `npx tsx src/cli.ts review --repo … --patches --out -` — pure report on
+  stdout (first line is the report title), status on stderr only.
+- `--format html` output: 6.7 KB single file, zero occurrences of external
+  URLs (`grep -c http` = 0).
+- Markdown output contains the mermaid `pie` block with per-directory totals.
+- Scripted MCP stdio session: `max_chars: 800` returned a 613-char packed
+  report plus the JSON summary block; with no gate both validation calls
+  refused; with `INSPECTOR_ALLOWED_COMMANDS="echo safe"` the unlisted
+  `npm run lint` was refused by name and `echo safe` executed.
+- GitHub Actions on push: build-and-test plus the self-review job's artifact.
 
 ## A blocker you hit and how you approached it
 
@@ -154,21 +228,31 @@ Two, honestly reported:
 
 ## Known limitations and the next three things you would do
 
-Limitations: validation commands still run through a shell (quoting foot-guns);
-no rename detection tuning (`-M` default threshold); JSON schema of the report
-is informal; MCP output is a single text block.
+Limitations: validation commands still run through a shell (quoting
+foot-guns); no rename detection tuning (`-M` default threshold); the JSON
+report shape is informal (no published schema); per-file patches cost one git
+invocation each; the context budget counts characters, not tokens.
 
-Next three:
+Of the previous "next three", all three shipped in the feature round (command
+allowlist; context-budgeted, machine-readable MCP output; capped diff
+content). The new next three:
 
-1. A command allowlist (e.g. `--allow "npm test"`) so the MCP gate can be
-   per-command instead of all-or-nothing.
-2. Structured MCP output (typed content) plus pagination for large diffs, so
-   agent context cost is bounded and predictable.
-3. Diff *content* summarization (patch hunks per file, size-capped) — file
-   names alone under-serve the review use case.
+1. Token-aware budgeting — count with a real tokenizer instead of characters,
+   since context windows are token-denominated.
+2. Cursor-based pagination for the file list and patches over MCP, so an
+   agent can walk a large diff incrementally instead of re-requesting with
+   bigger budgets.
+3. Process-level sandboxing for validation commands (no shell, argv arrays,
+   resource limits) so the allowlist isn't the only line of defense.
 
 ## Approximate focused-work time
 
-- Start: 2026-08-09 ~17:40 (investigation and planning)
-- Finish: 2026-08-09 ~18:40 (implementation, verification, documentation)
-- Roughly 60–90 focused minutes, AI-assisted throughout.
+- Session 1 (2026-08-09, ~17:40–18:40): investigation, planning, all
+  correctness fixes, tests, docs — roughly 60 focused minutes.
+- Session 2 (2026-08-10, ~75 focused minutes): the eight-feature round and
+  this document's updates.
+- Total is over the suggested 90 minutes. The overage was a deliberate
+  choice to extend scope with the feature round after the correctness work
+  was complete, not slow progress on the core task; the fix round alone fit
+  the window. Stated plainly here because accurate reporting seemed more
+  valuable than nominal compliance.
