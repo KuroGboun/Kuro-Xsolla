@@ -92,16 +92,20 @@ decision names — AI agents and humans/CI:
    xsolla.com's homepage**: I sampled the palette (paper canvas, near-black
    ink, slate secondary text, hairline dividers, fog fills, one cyan accent),
    type rules (medium-weight display at tight negative tracking, small grey
-   body), and component patterns (metric cards on fog fills, flat
-   hairline-bordered cards, hairline-divided rows instead of box grids) into
-   a short identity document, then applied its "internal tool" register —
-   tighter spacing, more tables, less display type. Two deliberate
-   deviations, because function beats brand: muted green/red stays for
-   +/- and pass/fail (they are data colors a review tool cannot drop, kept
-   quiet so cyan remains the only decorative accent), and the typeface is a
-   local font stack (Inter when installed) rather than a webfont, because
-   the page's zero-external-requests guarantee is a security property I was
-   not willing to trade for typography.
+   body), and component patterns (hairline-divided metric strips and rows
+   instead of box grids, flat hairline-bordered cards) into a short identity
+   document, iterated the page layout as a mock in Claude's design tool
+   (claude.ai/design), then implemented that mock in the report renderer:
+   brand top bar with the wordmark, display hero, metric strip with colored
+   add/delete counts, flag rows, grid file table with scaled bars, diff
+   accordions, and validation cards. Deliberate deviations, because function
+   and safety beat brand: muted green/red stays for +/- and pass/fail (data
+   colors a review tool cannot drop, kept quiet so cyan remains the only
+   decorative accent); the mock's Google Fonts link was **not** carried over
+   and the logo is embedded as a data URI, because the page's
+   zero-external-requests guarantee is a security property I was not willing
+   to trade for typography; and the design tool's runtime scripts were left
+   out — the shipped page is static, dependency-free HTML.
 7. **Mermaid directory chart** — the markdown report includes a pie of
    changed lines per top-level directory; GitHub renders it natively, so the
    report file is self-visualizing when committed or attached.
