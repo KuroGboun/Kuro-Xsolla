@@ -102,10 +102,12 @@ decision names — AI agents and humans/CI:
    and safety beat brand: muted green/red stays for +/- and pass/fail (data
    colors a review tool cannot drop, kept quiet so cyan remains the only
    decorative accent); the mock's Google Fonts link was **not** carried over
-   and the logo is embedded as a data URI, because the page's
-   zero-external-requests guarantee is a security property I was not willing
-   to trade for typography; and the design tool's runtime scripts were left
-   out — the shipped page is static, dependency-free HTML.
+   — instead the typeface (Satoshi, the identity's recommended substitute,
+   Fontshare/ITF Free Font License) and the logo are embedded directly in
+   the page as data URIs, because the zero-external-requests guarantee is a
+   security property I was not willing to trade for typography; and the
+   design tool's runtime scripts were left out — the shipped page is
+   static, dependency-free HTML (~200 KB self-contained).
 7. **Mermaid directory chart** — the markdown report includes a pie of
    changed lines per top-level directory; GitHub renders it natively, so the
    report file is self-visualizing when committed or attached.

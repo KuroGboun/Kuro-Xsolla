@@ -10,6 +10,7 @@ function escapeHtml(text: string): string {
     .replaceAll("'", "&#39;");
 }
 
+import { FONT_FACE_CSS } from "./fonts.js";
 import { LOGO_DATA_URI } from "./logo.js";
 
 const STYLE = `
@@ -20,10 +21,10 @@ const STYLE = `
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--paper); color: var(--ink);
-         font: 400 14px/1.6 Inter, -apple-system, BlinkMacSystemFont,
+         font: 400 14px/1.6 Satoshi, Inter, -apple-system, BlinkMacSystemFont,
                "Segoe UI", Helvetica, Arial, sans-serif;
          -webkit-font-smoothing: antialiased; }
-  .display { font-family: "Space Grotesk", Inter, -apple-system, sans-serif;
+  .display { font-family: Satoshi, Inter, -apple-system, sans-serif;
              font-weight: 500; }
   .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   .wrap { max-width: 1040px; margin: 0 auto; padding: 0 40px; }
@@ -53,7 +54,7 @@ const STYLE = `
   .metric:first-child { border-left: none; padding-left: 0; }
   .metric b { display: block; font-size: 38px; letter-spacing: -0.03em;
               line-height: 1; font-variant-numeric: tabular-nums; font-weight: 500;
-              font-family: "Space Grotesk", Inter, -apple-system, sans-serif; }
+              font-family: Satoshi, Inter, -apple-system, sans-serif; }
   .metric span { display: block; margin-top: 8px; font-size: 12px; color: var(--slate); }
   .metric.add b { color: var(--add); } .metric.del b { color: var(--del); }
   @media (max-width: 720px) {
@@ -226,7 +227,7 @@ export function htmlReport(result: ReviewResult): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light only">
 <title>Review report · ${escapeHtml(repoName)}</title>
-<style>${STYLE}</style>
+<style>${FONT_FACE_CSS}${STYLE}</style>
 </head>
 <body>
 <div class="topbar">

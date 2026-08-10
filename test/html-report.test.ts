@@ -29,7 +29,7 @@ describe("htmlReport", () => {
     expect(html).toContain("Files changed");
     expect(html).toContain("failed · exit 1");
     // Self-contained: no external requests (embedded data: URIs are fine).
-    expect(html).not.toMatch(/src="http|href="http|@import|url\(/);
+    expect(html).not.toMatch(/src="http|href="http|@import|url\((?!'data:)/);
   });
 
   it("escapes untrusted paths, commands, and output", () => {
